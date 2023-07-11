@@ -141,7 +141,7 @@ public class PostProvider : AppProvider<Post, int>
      .AsNoTracking()
      .Include(pc => pc.User)
      .Include(pc => pc.PostCategories)
-     .Where(m => m.Title.Contains(term) || m.Description.Contains(term) || m.Content.Contains(term));
+     .Where(m => m.Title.ToLower().Contains(term) || m.Description.ToLower().Contains(term) || m.Content.ToLower().Contains(term));
 
 
     var posts = await _mapper.ProjectTo<PostItemDto>(query).ToListAsync();
@@ -189,6 +189,12 @@ public class PostProvider : AppProvider<Post, int>
 
     var total = postsSearch.Count;
     var skip = page * pageSize - pageSize;
+    // Infinite if cero
+    if (pageSize == 0)
+    {
+      pageSize = int.MaxValue;
+    }
+
     var items = postsSearch
       .OrderByDescending(r => r.Rank)
       .Skip(skip)
@@ -218,7 +224,7 @@ public class PostProvider : AppProvider<Post, int>
   public async Task<IEnumerable<PostItemDto>> GetSearchAsync(string term)
   {
     var query = _dbContext.Posts.AsNoTracking();
-    if ("*".Equals(term, StringComparison.Ordinal))
+    if (!"*".Equals(term, StringComparison.Ordinal))
       query = query.Where(p => p.Title.ToLower().Contains(term.ToLower()));
     return await _mapper.ProjectTo<PostItemDto>(query).ToListAsync();
   }
